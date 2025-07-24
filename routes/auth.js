@@ -4,10 +4,60 @@ const jwt = require("jsonwebtoken")
 const Users = require("../models/auth")
 const { verifyToken } = require("../middlewares/auth")
 const { getRandomId } = require("../config/global")
-
+const { OAuth2Client } = require('google-auth-library');
 const router = express.Router()
 
 const { JWT_SECRET_KEY } = process.env
+
+
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
+router.post('/google-login', async (req, res) => {
+    const { token } = req.body;
+
+    try {
+        const ticket = await client.verifyIdToken({
+            idToken: token,
+            audience: process.env.GOOGLE_CLIENT_ID,
+        });
+
+        const payload = ticket.getPayload();
+        const { sub, email, name, picture, email_verified } = payload;
+
+        // Check if user already exists
+        let user = await Users.findOne({ email });
+
+        if (!user) {
+            // Create new user
+            user = new Users({
+                uid: sub,
+                email,
+                fullName: name,
+                photoURL: picture,
+                isEmailVerified: email_verified,
+                password: '', // no password for Google users
+                roles: ['user'],
+            });
+
+            await user.save();
+        }
+
+        // Generate JWT token (optional)
+        const authToken = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+            expiresIn: '7d',
+        });
+
+        res.status(200).json({
+            token: authToken,
+            user,
+        });
+    } catch (error) {
+        console.error('Google login error:', error);
+        res.status(401).json({ message: 'Google authentication failed' });
+    }
+});
+
+
 
 router.post("/register", async (req, res) => {
     try {
@@ -100,21 +150,25 @@ router.post("/login", async (req, res) => {
     }
 })
 
+
 router.get("/user", verifyToken, async (req, res) => {
     try {
+        const { uid } = req;
 
-        const { uid } = req
+        const user = await Users.findById(uid).select("-password").exec(); // 🔧 FIXED
 
-        const user = await Users.findOne({ uid }).select("-password").exec()
-        if (!user) { return res.status(404).json({ message: "User not found" }) }
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
 
-        res.status(200).json({ user })
+        res.status(200).json({ user });
 
     } catch (error) {
-        console.error(error)
-        res.status(500).json({ message: "Something went wrong. Internal server error.", isError: true, error })
+        console.error("Server Error:", error);
+        res.status(500).json({ message: "Something went wrong. Internal server error.", isError: true, error });
     }
-})
+});
+
 
 router.patch("/change-password", verifyToken, async (req, res) => {
     try {
