@@ -10,8 +10,8 @@ const connectDB = async () => {
 
     try {
         await mongoose.connect(
-            `mongodb+srv://zaidali:organic@cluster0.qmehy3e.mongodb.net/`,
-            { dbName: "development" }
+            `mongodb+srv://${MONGODB_USERNAME}:${MONGODB_PASSWORD}@cluster0.qmehy3e.mongodb.net/`,
+            { dbName:`${MONGODB_NAME}` }
         );
         console.log("✅ MongoDB connected");
     } catch (error) {

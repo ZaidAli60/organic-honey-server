@@ -3,22 +3,22 @@ const Users = require("../models/auth")
 
 const { JWT_SECRET } = process.env
 
-// const verifyToken = (req, res, next) => {
+const verifytoken = (req, res, next) => {
 
-//     const authHeader = req.headers.authorization
-//     const token = authHeader?.split(" ")[1]
-//     if (!token) return res.status(401).json({ message: "Access token missing" });
+    const authHeader = req.headers.authorization
+    const token = authHeader?.split(" ")[1]
+    if (!token) return res.status(401).json({ message: "Access token missing" });
 
-//     jwt.verify(token, JWT_SECRET, async (error, result) => {
-//         if (!error) {
-//             req.uid = result.uid
-//             next()
-//         } else {
-//             console.error(error)
-//             return res.status(401).json({ message: "Unauthorized or user doesn't have access" })
-//         }
-//     })
-// }
+    jwt.verify(token, process.env.JWT_SECRET, async (error, result) => {
+        if (!error) {
+            req.uid = result.uid
+            next()
+        } else {
+            console.error(error)
+            return res.status(401).json({ message: "Unauthorized or user doesn't have access" })
+        }
+    })
+}
 
 
 const verifyToken = (req, res, next) => {
@@ -65,4 +65,4 @@ const verifySuperAdmin = (req, res, next) => {
     })
 }
 
-module.exports = { verifyToken, verifySuperAdmin }
+module.exports = { verifyToken, verifySuperAdmin,verifytoken }

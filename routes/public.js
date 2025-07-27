@@ -4,11 +4,12 @@ const bcrypt = require("bcrypt")
 const Teams = require("../models/teams")
 const Testimonials = require("../models/testimonials")
 const Announcements = require("../models/announcements")
-const Blogs = require("../models/blog");
+const Blogs = require("../models/product");
 const { cloudinary } = require("../config/cloudinary")
 const Users = require("../models/auth")
 
 const { getRandomId } = require("../config/global")
+const Product = require("../models/product")
 
 const storage = multer.memoryStorage()
 const upload = multer({ storage })
@@ -24,7 +25,6 @@ router.get("/website-content", async (req, res) => {
         const { status = "" } = req.query; // Query parameter for status filtering
 
         const queries = [
-            Faqs.find({ status }),
             Testimonials.find({ status }),
             Teams.find({ status }),
             Announcements.find({ status })
@@ -196,25 +196,25 @@ router.get("/campuses", async (req, res) => {
 })
 
 
-router.get("/blogs", async (req, res) => {
+router.get("/products", async (req, res) => {
     try {
         const blogQuery = { status: "active" };
 
-        const allBlogs = await Blogs.find(blogQuery).select(
-            "uid id title slug author description blogContent imageURL bannerURL createdAt status"
+        const allProducts = await Product.find(blogQuery).select(
+            "uid id title slug category price sortOrder description imageURL createdAt status"
         );
 
         // Extra condition to double-check blog status
-        const activeBlogs = allBlogs.filter(blog => blog.status === "active");
+        const activeProduct = allProducts.filter(product => product.status === "active");
         // console.log(activeBlogs);
         res.status(200).json({
-            message: "Blogs fetched successfully",
+            message: "Products fetched successfully",
             isError: false,
-            blogs: activeBlogs
+            products: activeProduct
         });
 
     } catch (error) {
-        console.error("Error fetching blogs:", error);
+        console.error("Error fetching products:", error);
         res.status(500).json({
             message: "Internal Server Error",
             isError: true,
@@ -223,14 +223,14 @@ router.get("/blogs", async (req, res) => {
     }
 });
 
-router.get("/blog/:slug", async (req, res) => {
+router.get("/product/:slug", async (req, res) => {
     try {
         const { slug } = req.params;
 
-        const blog = await Blogs.findOne({ slug, status: "active" });
+        const product = await Product.findOne({ slug, status: "active" });
 
-        if (!blog) {
-            return res.status(404).json({ message: "Blog not found", isError: true });
+        if (!product) {
+            return res.status(404).json({ message: "Product not found", isError: true });
         }
 
         // Check if it's a social media bot user-agent 
@@ -244,20 +244,20 @@ router.get("/blog/:slug", async (req, res) => {
                 <html lang="en">
                 <head>
                     <meta charset="UTF-8">
-                    <title>${blog.title}</title>
-                    <meta property="og:title" content="${blog.title}" />
-                    <meta property="og:description" content="${blog.description}" />
-                    <meta property="og:image" content="${blog.imageURL}" />
-                    <meta property="og:url" content="https://hypercolab.vercel.app/blog/${blog.slug}" />
+                    <title>${product.title}</title>
+                    <meta property="og:title" content="${product.title}" />
+                    <meta property="og:description" content="${product.description}" />
+                    <meta property="og:image" content="${product.imageURL}" />
+                    
                     <meta property="og:type" content="article" />
                     <meta name="twitter:card" content="summary_large_image" />
-                    <meta name="twitter:title" content="${blog.title}" />
-                    <meta name="twitter:description" content="${blog.description}" />
-                    <meta name="twitter:image" content="${blog.imageURL}" />
+                    <meta name="twitter:title" content="${product.title}" />
+                    <meta name="twitter:description" content="${product.description}" />
+                    <meta name="twitter:image" content="${product.imageURL}" />
                 </head>
                 <body>
                     <script>
-                        window.location.replace("https://hypercolab.vercel.app/blog/${blog.slug}");
+                     
                     </script>
                 </body>
                 </html>
@@ -265,10 +265,10 @@ router.get("/blog/:slug", async (req, res) => {
             return res.send(html);
         }
 
-        res.status(200).json({ message: "Blog fetched", isError: false, blog });
+        res.status(200).json({ message: "Product fetched", isError: false, product });
 
     } catch (error) {
-        console.error("Error fetching blog by slug:", error);
+        console.error("Error fetching product by slug:", error);
         res.status(500).json({ message: "Internal Server Error", isError: true });
     }
 });

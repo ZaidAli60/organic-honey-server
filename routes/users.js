@@ -2,7 +2,7 @@ const express = require("express")
 const bcrypt = require("bcrypt")
 const multer = require("multer")
 const Users = require("../models/auth")
-const { verifySuperAdmin, verifyToken } = require("../middlewares/auth")
+const { verifySuperAdmin, verifyToken ,verifytoken} = require("../middlewares/auth")
 const { getRandomId, hasRole, getUser } = require("../config/global")
 const { cloudinary, deleteFileFromCloudinary } = require("../config/cloudinary")
 
@@ -120,32 +120,6 @@ router.get("/all", verifyToken, async (req, res) => {
         res.status(500).json({ message: "Something went wrong. Internal server error.", isError: true, error })
     }
 })
-router.get("/owners/all/:status", verifySuperAdmin, async (req, res) => {
-    try {
-
-        const { status = "" } = req.params
-        let query = { roles: { $in: ["owner"] } }
-        if (status) { query.status = status }
-
-        const allUsers = await Users.find(query).select("-password").exec()
-
-        const users = allUsers
-        // for (let item of allUsers) {
-        //     const user = { ...item.toObject() }
-        //     if (user.campusId) {
-        //         const campus = await Campuses.findOne({ id: user.campusId })
-        //         user.campus = campus.toObject()
-        //     }
-        //     users.push(user)
-        // }
-
-        res.status(200).json({ users })
-
-    } catch (error) {
-        console.error(error)
-        res.status(500).json({ message: "Something went wrong. Internal server error.", isError: true, error })
-    }
-})
 
 router.get("/user", verifyToken, async (req, res) => {
     try {
@@ -161,20 +135,7 @@ router.get("/user", verifyToken, async (req, res) => {
         res.status(500).json({ message: "Something went wrong. Internal server error.", isError: true, error })
     }
 })
-router.get("/single-with-cnic/:cnic", verifyToken, upload.single("image"), async (req, res) => {
-    try {
 
-        const { cnic } = req.params
-
-        const user = await getUser({ cnic })
-
-        res.status(200).json({ user })
-
-    } catch (error) {
-        console.error(error)
-        res.status(500).json({ message: "Something went wrong. Internal server error.", isError: true, error })
-    }
-})
 
 router.patch("/update", verifyToken, upload.single("image"), async (req, res) => {
     try {
@@ -219,57 +180,8 @@ router.patch("/update", verifyToken, upload.single("image"), async (req, res) =>
         res.status(500).json({ message: "Something went wrong while updating the new user", isError: true, error })
     }
 })
-router.patch("/update-with-cnic/:cnic", verifyToken, upload.single("image"), async (req, res) => {
-    try {
 
-        const { uid } = req
-        const { cnic } = req.params
-        let formData = req.body
-        let { country = "{}", province = "{}", city = "{}", emergencyContact = "{}" } = formData
-
-        const user = await Users.findOne({ cnic });
-        if (!user) { return res.status(404).json({ message: "User not found" }) }
-
-        let { photoURL = "", photoPublicId = "" } = user
-        if (req.file) {
-            await new Promise((resolve, reject) => {
-                const uploadStream = cloudinary.uploader.upload_stream(
-                    { folder: MONGODB_NAME + '/users' }, // Optional: specify a folder in Cloudinary
-                    (error, result) => {
-                        if (error) { return reject(error); }
-                        photoURL = result.secure_url; photoPublicId = result.public_id;
-                        resolve();
-                    }
-                )
-                uploadStream.end(req.file.buffer);
-            });
-        }
-
-        country = JSON.parse(country)
-        province = JSON.parse(province)
-        city = JSON.parse(city)
-        emergencyContact = JSON.parse(emergencyContact)
-
-        const newUserData = { ...formData, country, province, city, emergencyContact, photoURL, photoPublicId }
-
-        const updatedUser = await Users.findOneAndUpdate({ createdBy: uid, cnic }, newUserData, { new: true })
-        if (!updatedUser) { return res.status(404).json({ message: "Unauthorized or user not found" }) }
-
-        // const userWithCampus = { ...updatedUser.toObject() }
-
-        // if (userWithCampus.campusId) {
-        //     const campus = await Campuses.findOne({ id: campusId })
-        //     userWithCampus.campus = campus.toObject()
-        // }
-
-        res.status(200).json({ message: "A user has been successfully updated", isError: false, user: updatedUser })
-
-    } catch (error) {
-        console.error(error)
-        res.status(500).json({ message: "Something went wrong while updating the new user", isError: true, error })
-    }
-})
-router.patch("/update-profile-photo", verifyToken, upload.single("image"), async (req, res) => {
+router.patch("/update-profile-photo", verifytoken, upload.single("image"), async (req, res) => {
     try {
 
         const { uid } = req

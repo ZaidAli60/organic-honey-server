@@ -10,6 +10,8 @@ const mongoose = require('mongoose');
 // routes
 const announcements = require("./routes/announcements")
 const auth = require("./routes/auth")
+const product = require("./routes/product")
+const orders = require("./routes/orders")
 const messages = require("./routes/messages")
 const testimonials = require("./routes/testimonials")
 const users = require("./routes/users")
@@ -55,6 +57,8 @@ app.get('/db-test', (req, res) => {
 
 app.use("/announcements", announcements)
 app.use("/auth", auth)
+app.use("/product", product)
+app.use("/orders", orders);
 app.use("/messages", messages)
 app.use("/testimonials", testimonials)
 app.use("/users", users)

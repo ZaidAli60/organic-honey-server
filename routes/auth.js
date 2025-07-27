@@ -3,11 +3,12 @@ const bcrypt = require("bcrypt")
 const jwt = require("jsonwebtoken")
 const Users = require("../models/auth")
 const { verifyToken } = require("../middlewares/auth")
+const { verifytoken } = require("../middlewares/auth")
 const { getRandomId } = require("../config/global")
 const { OAuth2Client } = require('google-auth-library');
 const router = express.Router()
 
-const { JWT_SECRET_KEY } = process.env
+const { JWT_SECRET } = process.env
 
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
@@ -137,7 +138,7 @@ router.post("/login", async (req, res) => {
 
             const { uid } = user
 
-            const token = jwt.sign({ uid }, JWT_SECRET_KEY, { expiresIn: "1d" })
+            const token = jwt.sign({ uid }, JWT_SECRET, { expiresIn: "1d" })
 
             res.status(200).json({ message: "User loggedin successfully", isError: false, token })
         } else {
@@ -170,7 +171,24 @@ router.get("/user", verifyToken, async (req, res) => {
 });
 
 
-router.patch("/change-password", verifyToken, async (req, res) => {
+router.get("/api/user", verifytoken, async (req, res) => {
+    try {
+
+        const { uid } = req
+
+        const user = await Users.findOne({ uid }).select("-password").exec()
+        if (!user) { return res.status(404).json({ message: "User not found" }) }
+
+        res.status(200).json({ user })
+
+    } catch (error) {
+        console.error(error)
+        res.status(500).json({ message: "Something went wrong. Internal server error.", isError: true, error })
+    }
+})
+
+
+router.patch("/change-password", verifytoken, async (req, res) => {
     try {
         const { currentPassword, newPassword } = req.body;
 
