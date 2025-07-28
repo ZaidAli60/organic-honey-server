@@ -21,7 +21,7 @@ const { APP_URL, APP_URL_1, PORT = 8000 } = process.env
 connectDB();
 const app = express()
 app.use(cors({
-    origin: ['http://localhost:3000','https://organic-honey.vercel.app'],
+    origin: ['http://localhost:3000','https://organic-honey.vercel.app','https://dashboard-organic-honey.vercel.app'],
     methods: ['GET', 'POST', 'PUT', 'DELETE','PATCH'],
     credentials: true,
     allowedHeaders: ['Content-Type', 'Authorization']
